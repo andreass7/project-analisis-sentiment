@@ -64,12 +64,24 @@ if page == "🏠 Dashboard":
         else:
             st.info(f"Tidak ada data untuk label **{label}**.")
     
-    # KATA SERING MUNCUL 
-    st.subheader("🔁 20 Kata Paling Sering Muncul (Semua Data)")
-    tokens = " ".join(preprocessed_df['text_akhir']).split()
-    word_freq = Counter(tokens)
-    most_common_df = pd.DataFrame(word_freq.most_common(20), columns=["Kata", "Frekuensi"])
-    st.dataframe(most_common_df)
+    st.subheader("🔁 20 Kata Paling Sering Muncul Berdasarkan Sentimen")
+
+    # Fungsi untuk ambil 20 kata terbanyak dari data yang difilter per label
+    def tampilkan_kata_terbanyak(df, label_sentimen, label_nama, emoji):
+        filtered_texts = df[df['label'] == label_sentimen]['text_akhir']
+        tokens = " ".join(filtered_texts).split()
+        word_freq = Counter(tokens)
+        most_common_df = pd.DataFrame(word_freq.most_common(20), columns=["Kata", "Frekuensi"])
+        
+        with st.expander(f"{emoji} Sentimen {label_nama.capitalize()}"):
+            st.dataframe(most_common_df, use_container_width=True)
+
+    # Jalankan untuk setiap kategori sentimen
+    tampilkan_kata_terbanyak(preprocessed_df, "positif", "positif", "😊")
+    tampilkan_kata_terbanyak(preprocessed_df, "netral", "netral", "😐")
+    tampilkan_kata_terbanyak(preprocessed_df, "negatif", "negatif", "😠")
+
+
 
     st.subheader("📊 Evaluasi Model per Split")
 
