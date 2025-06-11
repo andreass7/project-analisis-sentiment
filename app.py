@@ -22,7 +22,7 @@ st.sidebar.markdown("**Tentang Aplikasi**")
 st.sidebar.info("Aplikasi ini melakukan analisis sentimen pada teks menggunakan model Naive Bayes dan KNN dengan preprocessing bahasa Indonesia.")
 
 # Load data
-preprocessed_df = pd.read_csv("data/df_cleaned.csv")
+preprocessed_df = pd.read_csv("data/df_cleaned2.csv")
 with open("model/metrics.json") as f:
     results = json.load(f)
 with open("model/confusion_data.json") as f:
@@ -48,18 +48,51 @@ download_nltk_resources()
 
 # Dashboard
 if page == "🏠 Dashboard":
+    label_emoji = {"negatif": "😠", "netral": "😐", "positif": "😊"}
     st.title("📊 Dashboard Analisis Sentimen")
 
+    st.subheader("📈 Distribusi Label Sentimen")
+
+    label_counts = preprocessed_df['label'].value_counts().reset_index()
+    label_counts.columns = ['Label', 'Jumlah']
+    label_counts['Emoji'] = label_counts['Label'].map(label_emoji)
+
+    # Bar chart
+       # Bar chart dengan anotasi jumlah
+    fig_bar, ax_bar = plt.subplots()
+    bars = ax_bar.bar(label_counts['Label'], label_counts['Jumlah'], color=['red', 'gray', 'green'])
+
+    ax_bar.set_title("Distribusi Data per Label")
+    ax_bar.set_xlabel("Label")
+    ax_bar.set_ylabel("Jumlah Data")
+    ax_bar.set_xticks(range(len(label_counts)))
+    ax_bar.set_xticklabels([f"{e} {l.capitalize()}" for e, l in zip(label_counts['Emoji'], label_counts['Label'])])
+
+    # Tambahkan jumlah di atas tiap bar
+    for bar in bars:
+        yval = bar.get_height()
+        ax_bar.text(bar.get_x() + bar.get_width()/2.0, yval + 10, f'{int(yval)}', ha='center', va='bottom', fontsize=10)
+
+    st.pyplot(fig_bar)
+
+
+    # Pie chart (opsional tambahan)
+    fig_pie, ax_pie = plt.subplots()
+    ax_pie.pie(label_counts['Jumlah'], labels=[f"{e} {l}" for e, l in zip(label_counts['Emoji'], label_counts['Label'])],
+               autopct='%1.1f%%', colors=['#FF6B6B', '#CFCFCF', '#9ADE7B'], startangle=140)
+    ax_pie.set_title("Proporsi Label Sentimen")
+    st.pyplot(fig_pie)
+    
     # WordCloud
     st.subheader("☁️ WordCloud berdasarkan Sentimen")
     col1, col2, col3 = st.columns(3)
-    label_emoji = {"negatif": "😠", "netral": "😐", "positif": "😊"}
     for label in ["negatif", "netral", "positif"]:
         st.markdown(f"### {label_emoji[label]} {label.capitalize()}")
         filtered_df = preprocessed_df[preprocessed_df['label'] == label]
-        text_data = " ".join(filtered_df['text_akhir'])
-        if text_data.strip():
-            wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text_data)
+        # text_data = " ".join(filtered_df['text_akhir'])
+        gabungan_teks = " ".join(filtered_df['text_akhir'].fillna('') + " " + filtered_df['text_stopword'].fillna(''))
+        if gabungan_teks.strip():
+            wordcloud = WordCloud(width=600, height=300, background_color='white').generate(gabungan_teks)
             st.image(wordcloud.to_array(), use_container_width=True)
         else:
             st.info(f"Tidak ada data untuk label **{label}**.")
